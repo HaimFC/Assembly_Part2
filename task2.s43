@@ -1,0 +1,62 @@
+#include <msp430xG46x.h>     ;define controlled include file
+
+               ORG 1100h
+Id1            DW    0,5,9,3,6,1,9,8  
+Id2            DW    0,7,0,7,0,1,5,2     
+IDsize         DW    8	
+MaxOdd         DS16  8
+
+               RSEG   CSTACK      ; defines stack segment of 80 words (default)
+               RSEG   CODE        ; ORG 0x3100 - place program in 'CODE' segment in to Flash memory
+                              
+Main           MOV   #SFE(CSTACK),SP    
+               PUSH  IDsize
+               PUSH  #MaxOdd 
+               PUSH  #Id1
+               PUSH  #Id2
+               CALL  #maxOddFunc
+               ADD   #8,SP   
+               
+L              JMP   L            ; Infinite loop  
+             
+maxOddFunc     MOV   2(SP), R4           
+               MOV   4(SP), R5
+               MOV   6(SP), R10           
+               MOV   8(SP), R7           
+         
+L1             MOV   @R4+,R8      
+               MOV   @R5+,R9      
+               BIT   #1,R8
+               JEQ   L2
+               BIT   #1,R9        
+               JEQ   L3     
+               CMP   R8,R9
+               JGE   L5
+               MOV   R8,R6
+               JMP   L6
+         
+L2             BIT   #1,R9
+               JEQ   L4
+               MOV   R9,R6
+               JMP   L6
+             
+L3             MOV   R8,R6
+               JMP   L6
+             
+L4             MOV   #0,R6
+               JMP   L6
+
+L5             MOV   R9,R6
+        
+L6             MOV   R6,0(R10)
+               INCD  R10
+               DEC   R7
+               JNZ   L1  
+               RET
+
+;-------------------------------------------------------------------------------
+               COMMON  INTVEC                  ; Interrupt Vectors
+;-------------------------------------------------------------------------------
+               ORG     RESET_VECTOR            ; POR, ext. Reset
+               DW      Main
+               END
